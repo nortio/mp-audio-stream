@@ -1,7 +1,7 @@
 #define MA_NO_DECODING
 #define MA_NO_ENCODING
 #define MINIAUDIO_IMPLEMENTATION
-#include "./miniaudio/miniaudio.h"
+#include "./miniaudio.h"
 
 #include "mp_audio_stream.h"
 

@@ -5,7 +5,7 @@
 #include <chrono>
 #include <thread>
 
-#include "./miniaudio/miniaudio.h"
+#include "./miniaudio.h"
 
 #include "mp_audio_stream.h"
 
