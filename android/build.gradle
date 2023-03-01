@@ -29,7 +29,7 @@ android {
 
     // Bumping the plugin ndkVersion requires all clients of this plugin to bump
     // the version in their app and to download a newer version of the NDK.
-    ndkVersion "21.1.6352462"
+    ndkVersion "25.1.8937393"
         
     // Invoke the shared CMake build with the Android Gradle Plugin.
     externalNativeBuild {
