@@ -1,3 +1,8 @@
+## 0.1.5
+
+* Added mixing two or more sources
+  * Using separate buffers for each source, it's now possible to mix them together as the output.
+
 ## 0.1.3
 
 - ios: fix broken build - initialize _ctx struct implicitly
