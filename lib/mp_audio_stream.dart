@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: MIT
+/*
+Copyright (c) 2022 reki2000
+Copyright (c) 2023 nortio
+*/
+
 /// A multi-platform audio stream output library for real-time generated wave data
 library audio_stream;
 

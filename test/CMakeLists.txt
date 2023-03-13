@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2023 nortio
+
 cmake_minimum_required(VERSION 3.0.0)
 project(parlo_stream_test VERSION 0.1.0)
 

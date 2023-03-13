@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: MIT
+/*
+Copyright (c) 2022 reki2000
+Copyright (c) 2023 nortio
+*/
+
 #ifdef __cplusplus
 #ifdef WIN32
     #define EXPORT extern "C" __declspec(dllexport)

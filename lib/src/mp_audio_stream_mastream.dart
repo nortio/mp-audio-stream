@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: MIT
+/*
+Copyright (c) 2022 reki2000
+Copyright (c) 2023 nortio
+*/
+
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
