@@ -25,7 +25,7 @@ abstract class AudioStream {
   void resume();
 
   /// Pushes wave data (float32, -1.0 to 1.0) into audio stream. When buffer is full, the input is ignored.
-  int push(Float32List buf);
+  int push(Float32List buf, bool mix, int userId);
 
   /// Returns statistics about buffer full/exhaust between the last reset and now
   AudioStreamStat stat();

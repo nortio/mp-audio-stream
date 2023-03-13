@@ -14,6 +14,7 @@
     #include "string.h"
 #endif
 
+#include "miniaudio.h"
 
 EXPORT
 int ma_stream_init(int max_buffer_size, int keep_buffer_size, int channels, int sample_rate);
@@ -22,7 +23,7 @@ EXPORT
 void ma_stream_uninit(void);
 
 EXPORT
-int ma_stream_push(float*, int);
+int ma_stream_push(float*, int, bool, int);
 
 EXPORT
 ma_uint32 ma_stream_stat_exhaust_count(void); 

@@ -9,8 +9,8 @@ import '../mp_audio_stream.dart';
 typedef _MAInitFunc = Int Function(Int64, Int64, Int64, Int64);
 typedef _MAInit = int Function(int, int, int, int);
 
-typedef _MAPushFunc = Int Function(Pointer<Float>, Int64);
-typedef _MAPush = int Function(Pointer<Float>, int);
+typedef _MAPushFunc = Int Function(Pointer<Float>, Int64, Bool, Int64);
+typedef _MAPush = int Function(Pointer<Float>, int, bool, int);
 
 typedef _MAVoidFunc = Void Function();
 typedef _MAVoid = void Function();
@@ -69,12 +69,12 @@ class AudioStreamImpl implements AudioStream {
   }
 
   @override
-  int push(Float32List buf) {
+  int push(Float32List buf, bool mix, int userId) {
     final ffiBuf = calloc<Float>(buf.length);
     for (int i = 0; i < buf.length; i++) {
       ffiBuf[i] = buf[i];
     }
-    final result = _pushFfi(ffiBuf, buf.length);
+    final result = _pushFfi(ffiBuf, buf.length, mix, userId);
     calloc.free(ffiBuf);
     return result;
   }
