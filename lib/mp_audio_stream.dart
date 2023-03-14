@@ -31,10 +31,11 @@ abstract class AudioStream {
   void resume();
 
   /// Pushes wave data (float32, -1.0 to 1.0) into audio stream. When buffer is full, the input is ignored.
-  int push(Float32List buf, bool mix, int userId);
+  int push(Float32List buf, int userId);
+  void removeBuffer(int userId);
 
   /// Returns statistics about buffer full/exhaust between the last reset and now
-  AudioStreamStat stat();
+  AudioStreamStat stat(int userId);
 
   /// Resets all statistics as zero
   void resetStat();
@@ -45,9 +46,12 @@ AudioStream getAudioStream() => AudioStreamImpl();
 
 /// Statistics about buffer full/exhaust
 class AudioStreamStat {
+  final int userId;
   final int full;
   final int exhaust;
-  AudioStreamStat({required this.full, required this.exhaust});
+  AudioStreamStat(
+      {required this.full, required this.exhaust, required this.userId});
 
-  factory AudioStreamStat.empty() => AudioStreamStat(full: 0, exhaust: 0);
+  factory AudioStreamStat.empty() =>
+      AudioStreamStat(full: 0, exhaust: 0, userId: 0);
 }

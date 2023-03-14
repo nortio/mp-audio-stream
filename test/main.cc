@@ -56,9 +56,9 @@ int main() {
     }
 
     // They should cancel out for the first 100 packets
-    ma_stream_push(buf, bufLength, false, 0);
+    ma_stream_push(buf, bufLength, 0);
     if(i < 100) {
-      ma_stream_push(buf2, bufLength, false, 1);
+      ma_stream_push(buf2, bufLength, 1);
     }
     // ma_stream_push(buf, bufLength, false, 1);
 

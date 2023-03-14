@@ -126,7 +126,7 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
 
 // TODO: function to remove users that have disconnected from channel
 
-int ma_stream_push(float *buf, int length, bool mix, int userId) {
+int ma_stream_push(float *buf, int length, int userId) {
   UserBuffer *userBuffer;
 
   if (activeSpeakers.find(userId) != activeSpeakers.end()) {
@@ -248,4 +248,14 @@ int ma_stream_init(int max_buffer_size, int keep_buffer_size, int channels,
   activeSpeakers = {};
 
   return 0;
+}
+
+void parlo_remove_user(int userId) {
+  if (activeSpeakers.find(userId) != activeSpeakers.end()) {
+    UserBuffer &existingUser = activeSpeakers.at(userId);
+    if(existingUser.buffer != NULL) {
+      free(existingUser.buffer);
+    }
+    int res = activeSpeakers.erase(userId);
+  }
 }

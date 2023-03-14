@@ -15,8 +15,8 @@ import '../mp_audio_stream.dart';
 typedef _MAInitFunc = Int Function(Int64, Int64, Int64, Int64);
 typedef _MAInit = int Function(int, int, int, int);
 
-typedef _MAPushFunc = Int Function(Pointer<Float>, Int64, Bool, Int64);
-typedef _MAPush = int Function(Pointer<Float>, int, bool, int);
+typedef _MAPushFunc = Int Function(Pointer<Float>, Int64, Int64);
+typedef _MAPush = int Function(Pointer<Float>, int, int);
 
 typedef _MAVoidFunc = Void Function();
 typedef _MAVoid = void Function();
@@ -24,13 +24,17 @@ typedef _MAVoid = void Function();
 typedef _MAIntFunc = Int Function();
 typedef _MAInt = int Function();
 
-/// Contol class for AudioStream on "not" web platform. Use `getAudioStream()` to get its instance.
+typedef _RemoveUserFunc = Void Function(Int64);
+typedef _RemoveUser = void Function(int);
+
+/// Control class for AudioStream on "not" web platform. Use `getAudioStream()` to get its instance.
 class AudioStreamImpl implements AudioStream {
   late _MAPush _pushFfi;
   late _MAVoid _uninitFfi;
   late _MAInt _statExhaustCountFfi;
   late _MAInt _statFullCountFfi;
   late _MAVoid _statResetFfi;
+  late _RemoveUser _removeUser;
 
   @override
   int init(
@@ -70,25 +74,29 @@ class AudioStreamImpl implements AudioStream {
         .lookup<NativeFunction<_MAVoidFunc>>("ma_stream_stat_reset")
         .asFunction<_MAVoid>();
 
+    _removeUser = dynLib
+        .lookup<NativeFunction<_RemoveUserFunc>>("parlo_remove_user")
+        .asFunction<_RemoveUser>();
+
     return initFfi(bufferMilliSec * sampleRate ~/ 1000,
         waitingBufferMilliSec * sampleRate ~/ 1000, channels, sampleRate);
   }
 
   @override
-  int push(Float32List buf, bool mix, int userId) {
+  int push(Float32List buf, int userId) {
     final ffiBuf = calloc<Float>(buf.length);
     for (int i = 0; i < buf.length; i++) {
       ffiBuf[i] = buf[i];
     }
-    final result = _pushFfi(ffiBuf, buf.length, mix, userId);
+    final result = _pushFfi(ffiBuf, buf.length, userId);
     calloc.free(ffiBuf);
     return result;
   }
 
   @override
-  AudioStreamStat stat() {
+  AudioStreamStat stat(int userId) {
     return AudioStreamStat(
-        full: _statFullCountFfi(), exhaust: _statExhaustCountFfi());
+        full: _statFullCountFfi(), exhaust: _statExhaustCountFfi(), userId: 0);
   }
 
   @override
@@ -102,5 +110,10 @@ class AudioStreamImpl implements AudioStream {
   @override
   void resetStat() {
     _statResetFfi();
+  }
+
+  @override
+  void removeBuffer(int userId) {
+    _removeUser(userId);
   }
 }

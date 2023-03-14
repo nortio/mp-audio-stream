@@ -29,7 +29,7 @@ EXPORT
 void ma_stream_uninit(void);
 
 EXPORT
-int ma_stream_push(float*, int, bool, int);
+int ma_stream_push(float*, int, int);
 
 EXPORT
 ma_uint32 ma_stream_stat_exhaust_count(void); 
@@ -39,3 +39,6 @@ ma_uint32 ma_stream_stat_full_count(void);
 
 EXPORT
 void ma_stream_stat_reset(void);
+
+EXPORT
+void parlo_remove_user(int);

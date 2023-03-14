@@ -54,18 +54,19 @@ class AudioStreamImpl extends AudioStream {
   }
 
   @override
-  int push(Float32List buf) {
+  int push(Float32List buf, int userId) {
     _stream?.callMethod('push', [buf]);
     return 0;
   }
 
   @override
-  AudioStreamStat stat() {
+  AudioStreamStat stat(int userId) {
     if (_stream != null) {
       final statJsObj = _stream!['stat'];
       final fullCount = statJsObj['fullCount'];
       final exhaustCount = statJsObj['exhaustCount'];
-      return AudioStreamStat(full: fullCount, exhaust: exhaustCount);
+      return AudioStreamStat(
+          full: fullCount, exhaust: exhaustCount, userId: userId);
     } else {
       return AudioStreamStat.empty();
     }
@@ -74,5 +75,10 @@ class AudioStreamImpl extends AudioStream {
   @override
   void resetStat() {
     _stream?.callMethod('resetStat', []);
+  }
+
+  @override
+  void removeBuffer(int userId) {
+    // TODO: implement removeBuffer
   }
 }
