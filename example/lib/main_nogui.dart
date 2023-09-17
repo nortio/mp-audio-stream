@@ -9,11 +9,12 @@ void main() async {
   audioStream.init();
 
   const freq = 440;
-  const rate = 44100;
+  const rate = 48000;
 
   final sineWave = List.generate(
       rate * 1, (i) => math.sin(2 * math.pi * ((i * freq) % rate) / rate));
-  audioStream.push(Float32List.fromList(sineWave));
+
+  audioStream.push(Float32List.fromList(sineWave), 1);
 
   await Future.delayed(const Duration(seconds: 2));
 

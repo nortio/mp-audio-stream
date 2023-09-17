@@ -34,11 +34,16 @@ abstract class AudioStream {
   int push(Float32List buf, int userId);
   void removeBuffer(int userId);
 
-  /// Returns statistics about buffer full/exhaust between the last reset and now
+  Float32List getMicData(int length);
+/*   /// Returns statistics about buffer full/exhaust between the last reset and now
   AudioStreamStat stat(int userId);
 
   /// Resets all statistics as zero
-  void resetStat();
+  void resetStat(); */
+
+  bool isReady(int length);
+
+  Stream<Float32List> inputStream();
 }
 
 /// Returns an `AudioStream` instance for running platform (web/others)

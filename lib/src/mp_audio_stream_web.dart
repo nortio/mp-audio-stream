@@ -81,4 +81,22 @@ class AudioStreamImpl extends AudioStream {
   void removeBuffer(int userId) {
     // TODO: implement removeBuffer
   }
+
+  @override
+  Float32List getMicData(int length) {
+    // TODO: implement getMicData
+    throw UnimplementedError();
+  }
+
+  @override
+  bool isReady(int length) {
+    // TODO: implement isReady
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<Float32List> inputStream() {
+    // TODO: implement inputStream
+    throw UnimplementedError();
+  }
 }

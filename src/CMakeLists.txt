@@ -3,11 +3,22 @@
 # the plugin to fail to compile for some customers of the plugin.
 cmake_minimum_required(VERSION 3.10)
 
-project(mp_audio_stream_library VERSION 0.0.1 LANGUAGES CXX)
+project(mp_audio_stream_library VERSION 0.0.1 LANGUAGES CXX C)
 
 add_library(mp_audio_stream SHARED
   "mp_audio_stream.cc"
+  "dart-sdk-include/dart_api_dl.c"
+  "utils.cc"
 )
+
+if(ANDROID)
+find_library(
+  log-lib
+  log
+)
+
+target_link_libraries(mp_audio_stream ${log-lib})
+endif()
 
 set_target_properties(mp_audio_stream PROPERTIES
   PUBLIC_HEADER mp_audio_stream.h

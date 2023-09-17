@@ -38,7 +38,7 @@ int main() {
   int bufLength = 8820; // 20ms packet at 44100 hz
 
   float *buf = (float *)calloc(bufLength, sizeof(float));
-    float *buf2 = (float *)calloc(bufLength, sizeof(float));
+  float *buf2 = (float *)calloc(bufLength, sizeof(float));
 
   int freq = 440;
 
