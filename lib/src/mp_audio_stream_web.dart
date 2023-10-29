@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:js' as js;
 import 'dart:html' as html;
 import 'dart:typed_data';
@@ -97,6 +98,18 @@ class AudioStreamImpl extends AudioStream {
   @override
   Stream<Float32List> inputStream() {
     // TODO: implement inputStream
+    throw UnimplementedError();
+  }
+
+  @override
+  ReceivePort getPort() {
+    // TODO: implement getPort
+    throw UnimplementedError();
+  }
+
+  @override
+  int opusPush(Uint8List buf, int userId) {
+    // TODO: implement opusPush
     throw UnimplementedError();
   }
 }

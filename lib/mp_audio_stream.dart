@@ -7,6 +7,7 @@ Copyright (c) 2023 nortio
 /// A multi-platform audio stream output library for real-time generated wave data
 library audio_stream;
 
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'src/mp_audio_stream_mastream.dart'
@@ -16,6 +17,8 @@ import 'src/mp_audio_stream_mastream.dart'
 abstract class AudioStream {
   /// Initializes an audio stream and starts to play. Returns 0 then scucess.
   /// Calling more than once makes a new AudioStream, the previous device will be `uninit`ed.
+  ReceivePort getPort();
+
   int init(
       {int bufferMilliSec = 3000,
       int waitingBufferMilliSec = 100,
@@ -32,6 +35,7 @@ abstract class AudioStream {
 
   /// Pushes wave data (float32, -1.0 to 1.0) into audio stream. When buffer is full, the input is ignored.
   int push(Float32List buf, int userId);
+  int opusPush(Uint8List buf, int userId);
   void removeBuffer(int userId);
 
   Float32List getMicData(int length);

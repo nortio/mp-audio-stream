@@ -1,15 +1,27 @@
 #pragma once
 #include "miniaudio.h"
+#include <chrono>
+#include <cmath>
 #include <iostream>
 #include <stdint.h>
 #include <unordered_map>
-#include <cmath>
+
+#ifdef __ANDROID__
+#include <android/log.h>
+#define LOG__INT(fmt, ...)                                                     \
+  __android_log_print(ANDROID_LOG_INFO, "native_audio", fmt "%s", __VA_ARGS__);
+#define LOG(...) LOG__INT(__VA_ARGS__, "\n")
+#else
+#define LOG__INT(fmt, ...)                                                     \
+  std::printf("\x1b[90m[native_audio - INFO] \x1b[0m" fmt "%s", __VA_ARGS__);
+#define LOG(...) LOG__INT(__VA_ARGS__, "\n")
+#endif
 
 struct UserBuffer {
   int id = -1;
   ma_uint32 buffer_size;
 
-  float *buffer;
+  float *buffer = nullptr;
   ma_uint32 buf_end = 0;
   ma_uint32 buf_start = 0;
 
@@ -50,3 +62,15 @@ inline float calculate_mic_level(float *input, uint32_t frame_count) {
 
   return level;
 }
+
+void add_to_buffer(float *dest, float *src, int frame_count);
+
+class Stopwatch {
+public:
+  Stopwatch();
+  void start();
+  double elapsed();
+
+private:
+  std::chrono::time_point<std::chrono::steady_clock> start_time;
+};

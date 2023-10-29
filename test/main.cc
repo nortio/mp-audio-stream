@@ -16,9 +16,11 @@ Copyright (c) 2023 nortio
 #include <stdlib.h>
 
 #include "../src/mp_audio_stream.h"
+#include "../src/utils.h"
+#define PI 3.14159265
 
 static bool continueRunning = true;
-const int sample_rate = 44100;
+const int sample_rate = 48000;
 const int channels = 1;
 const int max_buffer_size_ms = 3000;
 const int wait_buffer_size_ms = 50;
@@ -44,15 +46,15 @@ int main() {
 
   signal(SIGINT, closeSignal);
 
-  std::cout << "\x1b[2J" << std::endl;
+  //std::cout << "\x1b[2J" << std::endl;
 
   int i = 0;
   while (continueRunning) {
     auto lag = rand() % emulated_lag_range + min_lag;
 
     for (int j = 0; j < bufLength; j++) {
-      buf[j] = (float)sin(2 * 3.14159265 * ((j * freq) % sample_rate) / sample_rate);
-      buf2[j] = (float)sin(2 * 3.14159265 * ((j * freq) % sample_rate) / sample_rate + (3.14159265));
+      buf[j] = (float)sin(2 * PI * ((j * freq) % sample_rate) / sample_rate);
+      buf2[j] = (float)sin(2 * PI * ((j * freq) % sample_rate) / sample_rate + (PI));
     }
 
     // They should cancel out for the first 100 packets
@@ -62,10 +64,10 @@ int main() {
     }
     // ma_stream_push(buf, bufLength, false, 1);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(lag));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(lag));
     i++;
   }
-  std::cout << "\nClosing" << std::endl;
+  LOG("Closing");
   ma_stream_uninit();
   free(buf);
 }

@@ -135,4 +135,20 @@ class AudioStreamImpl implements AudioStream {
 
     return controller.stream;
   }
+
+  @override
+  ReceivePort getPort() {
+    return nativeRequests;
+  }
+
+  @override
+  int opusPush(Uint8List buf, int userId) {
+    final ffiBuf = calloc<Uint8>(buf.length);
+    for (int i = 0; i < buf.length; i++) {
+      ffiBuf[i] = buf[i];
+    }
+    final result = ffiModule.push_opus(ffiBuf, buf.length, userId);
+    calloc.free(ffiBuf);
+    return result;
+  }
 }

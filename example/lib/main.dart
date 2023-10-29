@@ -89,9 +89,9 @@ class _MyHomePageState extends State<MyHomePage> {
     // then pushes them to the audio stream
     int pos = 0;
     Timer.periodic(const Duration(milliseconds: 1000 ~/ hz), (t) {
-      audioStream.push(wave.sublist(pos, pos + step));
-
-      setState(() => stat = audioStream.stat());
+      audioStream.push(wave.sublist(pos, pos + step), 0);
+      // TODO: stat unimplemented
+      //setState(() => stat = audioStream.stat());
 
       pos += step;
       if (pos >= wave.length) {

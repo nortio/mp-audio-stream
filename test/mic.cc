@@ -22,7 +22,7 @@ const int bar_size = 80;
 char bar[bar_size + 1];
 
 UserBuffer *micBuffer;
-std::unordered_map<int, UserBuffer> activeSpeakers;
+std::unordered_map<int, UserBuffer> active_speakers;
 
 // short *tempInputBuffer = NULL;
 // DenoiseState *st;
@@ -30,11 +30,11 @@ std::unordered_map<int, UserBuffer> activeSpeakers;
 int push_stream_buffer(float *buf, int length, int userId) {
   UserBuffer *userBuffer;
 
-  if (activeSpeakers.find(userId) != activeSpeakers.end()) {
-    UserBuffer &existingUser = activeSpeakers.at(userId);
+  if (active_speakers.find(userId) != active_speakers.end()) {
+    UserBuffer &existingUser = active_speakers.at(userId);
     userBuffer = &existingUser;
   } else {
-    UserBuffer &newUser = activeSpeakers[userId];
+    UserBuffer &newUser = active_speakers[userId];
     newUser.id = userId;
     newUser.buffer_size = max_buffer_size;
     newUser.minimum_size_to_recover = wait_buffer_size;
@@ -163,7 +163,7 @@ void data_callback_capture(ma_device *device, void *output, const void *input,
 
   buffer_push(micBuffer, float_input, frame_count);
 
-  for (auto &speaker : activeSpeakers) {
+  for (auto &speaker : active_speakers) {
     auto &userBuffer = speaker.second;
     consume_from_buffer(float_output, &userBuffer, frame_count);
   }
@@ -176,7 +176,7 @@ void data_callback_capture(ma_device *device, void *output, const void *input,
     } */
 };
 
-bool running = true;
+volatile bool running = true;
 
 void stopRunning(int signal) { running = false; }
 
@@ -230,13 +230,13 @@ int main() {
   // rnnoise_destroy(st);
   printf("Closing...");
   ma_device_uninit(&device);
-  for (auto &buffer : activeSpeakers) {
+  for (auto &buffer : active_speakers) {
     auto buf = buffer.second.buffer;
     if (buf != NULL) {
       free(buf);
     }
   }
-  activeSpeakers.clear();
+  active_speakers.clear();
   free(micBuffer->buffer);
 
   // ma_encoder_uninit(&encoder);

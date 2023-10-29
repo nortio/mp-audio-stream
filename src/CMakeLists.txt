@@ -7,18 +7,26 @@ project(mp_audio_stream_library VERSION 0.0.1 LANGUAGES CXX C)
 
 add_library(mp_audio_stream SHARED
   "mp_audio_stream.cc"
+  "user_buffer.cpp"
   "dart-sdk-include/dart_api_dl.c"
   "utils.cc"
 )
 
 if(ANDROID)
-find_library(
-  log-lib
-  log
-)
+  find_library(
+    log-lib
+    log
+  )
 
-target_link_libraries(mp_audio_stream ${log-lib})
+  target_link_libraries(mp_audio_stream PUBLIC ${log-lib})
 endif()
+
+#set(CMAKE_CXX_STANDARD 20)
+#set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
+add_compile_options(-O3 -Wall -Wextra -fPIC)
+#set(OPUS_BUILD_SHARED_LIBRARY ON CACHE BOOL "" FORCE)
+add_subdirectory("../3rdparty/opus-1.4" "${CMAKE_CURRENT_BINARY_DIR}/opus" EXCLUDE_FROM_ALL)
+target_link_libraries(mp_audio_stream PUBLIC opus)
 
 set_target_properties(mp_audio_stream PROPERTIES
   PUBLIC_HEADER mp_audio_stream.h

@@ -69,6 +69,25 @@ class AudioStreamNative {
   late final _ma_stream_push = _ma_stream_pushPtr
       .asFunction<int Function(ffi.Pointer<ffi.Float>, int, int)>();
 
+  int push_opus(
+    ffi.Pointer<ffi.Uint8> arg0,
+    int arg1,
+    int arg2,
+  ) {
+    return _push_opus(
+      arg0,
+      arg1,
+      arg2,
+    );
+  }
+
+  late final _push_opusPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Int Function(
+              ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int)>>('push_opus');
+  late final _push_opus = _push_opusPtr
+      .asFunction<int Function(ffi.Pointer<ffi.Uint8>, int, int)>();
+
   ffi.Pointer<ffi.Float> get_mic_data(
     int arg0,
   ) {

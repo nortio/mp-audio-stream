@@ -18,7 +18,6 @@ void print_info(const std::unordered_map<int, UserBuffer> &map, unsigned long lo
   std::printf("\033[H\033[2J");
   std::printf("Callbacks: %llu\tDevice name: %s\n", data_callback_counter,
               device_name);
-  auto mapSize = (unsigned int)map.size();
   for (auto &keypair : map) {
     auto size = keypair.second.buf_end - keypair.second.buf_start;
     auto isFull = "\x1b[32m";
@@ -100,4 +99,18 @@ int buffer_push(UserBuffer * userBuffer, float* src, int length) {
   userBuffer->buf_end += length;
 
   return 0;
+}
+
+Stopwatch::Stopwatch() {
+  start();
+}
+
+void Stopwatch::start() {
+  start_time = std::chrono::steady_clock::now();
+}
+
+double Stopwatch::elapsed() {
+  auto now = std::chrono::steady_clock::now();
+  std::chrono::duration<double, std::micro> elapsed = now - start_time;
+  return elapsed.count();
 }
