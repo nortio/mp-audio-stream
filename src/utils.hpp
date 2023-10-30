@@ -1,7 +1,8 @@
 #pragma once
+#define NOMINMAX
 #include "miniaudio.h"
 #include <chrono>
-#include <cmath>
+#include <algorithm>
 #include <iostream>
 #include <stdint.h>
 #include <unordered_map>

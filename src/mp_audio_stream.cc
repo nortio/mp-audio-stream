@@ -24,7 +24,7 @@ Copyright (c) 2023 nortio
 #include "dart-sdk-include/dart_api_dl.h"
 #include "mp_audio_stream.h"
 #include "user_buffer.h"
-#include "utils.h"
+#include "utils.hpp"
 #include <atomic>
 #include <iostream>
 #include <unordered_map>
@@ -114,7 +114,7 @@ void encode_thread_func() {
                                           mic_number_of_samples_per_packet,
                                           encoded_packet, max_data_bytes_opus);
     if (encoded_bytes < 0) {
-      LOG("ERROR ENCODING OPUS PACKET: %s", opus_strerror(encoded_bytes));
+      //LOG("ERROR ENCODING OPUS PACKET: %s", opus_strerror(encoded_bytes));
     }
 
 #ifndef SELFTEST
