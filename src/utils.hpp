@@ -6,6 +6,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <unordered_map>
+#include <cmath>
 
 #ifdef __ANDROID__
 #include <android/log.h>
