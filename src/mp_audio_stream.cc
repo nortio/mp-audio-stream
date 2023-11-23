@@ -101,7 +101,7 @@ float input_array[960];
 
 std::atomic<bool> continue_running{true};
 
-volatile static float treshold = 0.8f;
+volatile static float treshold = 0.65f;
 volatile bool is_transmitting = false;
 
 void set_treshold(double t) { treshold = t; }
@@ -134,7 +134,7 @@ void encode_thread_func() {
       if (is_over_treshold || is_transmitting) {
         if (!is_over_treshold) {
           if (std::chrono::steady_clock::now() - last_activation >
-              Duration::ns50) {
+              500000000ns) {
             is_transmitting = false;
             continue;
           }
