@@ -4,31 +4,29 @@ Copyright (c) 2022 reki2000
 Copyright (c) 2023 nortio
 */
 
-#include "dart-sdk-include/dart_native_api.h"
-#include "opus_defines.h"
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <iostream>
 #include <ostream>
 #include <ratio>
 #include <sstream>
 #include <string>
 #include <thread>
+#include <unordered_map>
 
 #define MA_NO_DECODING
 #define MA_NO_ENCODING
 #define MINIAUDIO_IMPLEMENTATION
 //#define MA_NO_PULSEAUDIO
 #include "../3rdparty/opus-1.4/include/opus.h"
-#include "dart-sdk-include/dart_api.h"
-#include "dart-sdk-include/dart_api_dl.h"
+#include "miniaudio.h"
 #include "mp_audio_stream.h"
 #include "user_buffer.h"
 #include "utils.hpp"
-#include <atomic>
-#include <iostream>
-#include <unordered_map>
+#include "values.hpp"
 
 #define DEVICE_FORMAT ma_format_f32
 
@@ -48,14 +46,23 @@ uint8_t encoded_packet[max_data_bytes_opus];
 Buffer input_buffer(-1, mic_number_of_samples_per_packet * 10, 0);
 UserBuffer micBuffer;
 std::unordered_map<int, Buffer> active_speakers;
-Dart_Port data_callback_dart_port;
-Dart_Port level_dart_port;
+
 uint8_t example_data[3] = {0x01, 0x02, 0x03};
 float *mic_ready_packet_buffer = nullptr;
 std::thread encoding_thread;
 
+#ifndef SELFTEST
+#include "dart-sdk-include/dart_api.h"
+#include "dart-sdk-include/dart_api_dl.h"
+
+Dart_Port data_callback_dart_port;
+Dart_Port level_dart_port;
+
 void notify_dart(Dart_Port port, int64_t number) {
   const bool res = Dart_PostInteger_DL(port, number);
+  if (!res) {
+    LOG("Could not notify dart (integer)");
+  }
 }
 
 void notify_dart_encoded(Dart_Port port, uint8_t *data, uint32_t len) {
@@ -78,36 +85,30 @@ void notify_dart_mic_level(double level) {
 
   const bool res = Dart_PostCObject_DL(level_dart_port, &request);
   if (!res) {
-    LOG("Could not post encoded data to dart isolate");
+    LOG("Could not post mic level to dart isolate");
   }
 }
 
-/* void ready() {
-  std::cout << "Initializing notification thread" << std::endl;
-  while(notify_loop.load()) {
-    if (!notified.load() && is_mic_ready(mic_number_of_samples_per_packet)) {
-      notify_dart(data_callback_dart_port, data_callback_counter);
-      notified = true;
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
-  }
+intptr_t init_dart_api_dl(void *data) { return Dart_InitializeApiDL(data); }
 
-  std::cout << "Destroying notify loop thread" << std::endl;
-} */
+void init_port(Dart_Port port, Dart_Port l_port) {
+  data_callback_dart_port = port;
+  level_dart_port = l_port;
+}
+#endif
 
 float input_array[960];
 
-std::atomic<bool> ready{false};
 std::atomic<bool> continue_running{true};
 
-volatile static float treshold = 0.7f;
+volatile static float treshold = 0.8f;
+volatile bool is_transmitting = false;
 
 void set_treshold(double t) { treshold = t; }
 
 void encode_thread_func() {
-  using namespace std::literals;
   Stopwatch data_callback_stopwatch;
-
+  auto last_activation = std::chrono::steady_clock::now();
   auto end = std::chrono::steady_clock::now();
   auto start = std::chrono::steady_clock::now();
   std::chrono::duration<int64_t, std::nano> need_to_wait{0};
@@ -129,7 +130,19 @@ void encode_thread_func() {
 #ifndef SELFTEST
       notify_dart_mic_level(level);
 #endif
-      if (level > treshold) {
+      bool is_over_treshold = level > treshold;
+      if (is_over_treshold || is_transmitting) {
+        if (!is_over_treshold) {
+          if (std::chrono::steady_clock::now() - last_activation >
+              Duration::ns50) {
+            is_transmitting = false;
+            continue;
+          }
+        } else {
+          is_transmitting = true;
+          last_activation = std::chrono::steady_clock::now();
+        }
+
         int encoded_bytes = opus_encode_float(
             opus_encoder, input_array, mic_number_of_samples_per_packet,
             encoded_packet, max_data_bytes_opus);
@@ -141,6 +154,8 @@ void encode_thread_func() {
         notify_dart_encoded(data_callback_dart_port, encoded_packet,
                             encoded_bytes);
 #endif
+      } else {
+        is_transmitting = false;
       }
     }
 
@@ -149,7 +164,7 @@ void encode_thread_func() {
     std::chrono::duration<int64_t, std::nano> duration = end - start;
     // LOG("Encoding + notification duration: %f", duration.count());
 
-    need_to_wait = 20000000ns - duration;
+    need_to_wait = Duration::ns20 - duration;
 
     data_callback_stopwatch.start();
   }
@@ -170,8 +185,11 @@ void data_callback(ma_device *device, void *p_output, const void *p_input,
   print_info(active_speakers, data_callback_counter, device_name);
 #endif
 
+#ifdef PARLO_MIC_DEBUG
+  print_mic_level(data_callback_counter, input, frame_count, is_transmitting);
+#endif
+
   input_buffer.push(input, frame_count);
-  ready = true;
 
   for (auto &[_, buffer] : active_speakers) {
     buffer.consume(output, frame_count);
@@ -241,18 +259,10 @@ void ma_stream_uninit() {
 
   // notify_loop = false;
   continue_running = false;
-  ready = true;
   encoding_thread.join();
 
   opus_decoder_destroy(opus_decoder);
   opus_encoder_destroy(opus_encoder);
-}
-
-intptr_t init_dart_api_dl(void *data) { return Dart_InitializeApiDL(data); }
-
-void init_port(Dart_Port port, Dart_Port l_port) {
-  data_callback_dart_port = port;
-  level_dart_port = l_port;
 }
 
 int ma_stream_init(int max_buffer_size_p, int keep_buffer_size_p,

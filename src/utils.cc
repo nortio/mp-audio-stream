@@ -1,5 +1,7 @@
 #include "utils.hpp"
 #include <chrono>
+#include <cstdint>
+#include <cstdio>
 #include <iostream>
 #include <cstring>
 #include <ratio>
@@ -10,8 +12,23 @@ void add_to_buffer(float *dest, float *src, int frame_count) {
     // dest[i] represents a float, so setting bytes directly with
     // frame_count*sizeof(float) as limit for i is not correct.
     dest[i] += src[i];
-    //std::cout << " a " << dest[i] << " src " << src[i] << "|\t";
   }
+}
+
+const int bar_size = 40;
+char bar[bar_size + 1];
+
+void print_mic_level(uint64_t counter, float *input, uint32_t frame_count, bool speaking) {
+  float level = calculate_mic_level(input, frame_count);
+  int bar_i = floor(level * bar_size);
+  bar[bar_size] = '\0';
+  memset(bar, ' ', bar_size * sizeof(char));
+  for (int i = 0; i < bar_i; i++) {
+    bar[i] = 'x';
+  }
+  std::printf("[%s%s\x1b[0m]\tlev:%f\t\t%lu\tspeaking:%d\r", speaking ? "\x1b[32m" : "\x1b[0m", bar, level, counter, speaking);
+  
+  std::flush(std::cout);
 }
 
 void print_info(const std::unordered_map<int, Buffer> &map, unsigned long long data_callback_counter, const char device_name[256]) {
@@ -35,7 +52,7 @@ void print_info(const std::unordered_map<int, Buffer> &map, unsigned long long d
 
 void consume_from_buffer(float *output, UserBuffer *user_buffer,
                          int frame_count) {
-  ma_uint32 playable_size = user_buffer->buf_end - user_buffer->buf_start;
+  uint32_t playable_size = user_buffer->buf_end - user_buffer->buf_start;
 
   if (user_buffer->is_exhausted &&
       playable_size < user_buffer->minimum_size_to_recover) {
@@ -62,7 +79,7 @@ void consume_from_buffer(float *output, UserBuffer *user_buffer,
 
 void consume_from_buffer_mic(float *output, UserBuffer *user_buffer,
                          int frame_count) {
-  ma_uint32 playable_size = user_buffer->buf_end - user_buffer->buf_start;
+  uint32_t playable_size = user_buffer->buf_end - user_buffer->buf_start;
 
 
   while(playable_size < frame_count) {

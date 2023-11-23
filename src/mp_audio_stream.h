@@ -17,6 +17,10 @@ Copyright (c) 2023 nortio
     #include <stdbool.h>
 #endif
 
+#ifdef SELFTEST
+#include "utils.hpp"
+extern UserBuffer micBuffer;
+#endif
 
 EXPORT
 int ma_stream_init(int max_buffer_size, int keep_buffer_size, int channels, int sample_rate);
@@ -47,11 +51,13 @@ void parlo_remove_user(int);
 EXPORT
 bool is_mic_ready(uint32_t);
 
+#ifndef SELFTEST
 EXPORT
 intptr_t init_dart_api_dl(void* data);
 
 EXPORT
 void init_port(int64_t, int64_t);
+#endif
 
 EXPORT
 void set_treshold(double);

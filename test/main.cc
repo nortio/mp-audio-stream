@@ -14,7 +14,6 @@ Copyright (c) 2023 nortio
 #include <signal.h>
 #include <thread>
 #include <stdlib.h>
-
 #include "../src/mp_audio_stream.h"
 #include "../src/utils.hpp"
 #define PI 3.14159265
@@ -70,4 +69,5 @@ int main() {
   LOG("Closing");
   ma_stream_uninit();
   free(buf);
+  free(buf2);
 }

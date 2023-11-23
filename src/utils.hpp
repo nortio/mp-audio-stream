@@ -1,7 +1,6 @@
 #pragma once
 #include "user_buffer.h"
 #define NOMINMAX
-#include "miniaudio.h"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -22,21 +21,21 @@
 
 struct UserBuffer {
   int id = -1;
-  ma_uint32 buffer_size;
+  uint32_t buffer_size;
 
   float *buffer = nullptr;
-  ma_uint32 buf_end = 0;
-  ma_uint32 buf_start = 0;
+  uint32_t buf_end = 0;
+  uint32_t buf_start = 0;
 
   bool is_exhausted = false;
-  ma_uint32 minimum_size_to_recover;
+  uint32_t minimum_size_to_recover;
 
   // Buffer exhaustion count (when buffer does not contain at least a frame but
   // it's copied anyway)
-  ma_uint32 exhaust_count = 0;
+  uint32_t exhaust_count = 0;
 
   // Buffer full count
-  ma_uint32 full_count = 0;
+  uint32_t full_count = 0;
 };
 
 void consume_from_buffer(float *output, UserBuffer *user_buffer,
@@ -48,6 +47,8 @@ void consume_from_buffer_mic(float *output, UserBuffer *user_buffer,
 void print_info(const std::unordered_map<int, Buffer> &map,
                 unsigned long long data_callback_counter,
                 const char device_name[256]);
+                
+void print_mic_level(uint64_t counter, float *input, uint32_t frame_count, bool speaking);
 
 int buffer_push(UserBuffer *userBuffer, float *src, int length);
 
