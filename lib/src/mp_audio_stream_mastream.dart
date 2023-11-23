@@ -52,8 +52,6 @@ class AudioStreamImpl implements AudioStream {
     final levelPortSend = levelPort.sendPort.nativePort;
     ffiModule.init_port(nativePort, levelPortSend);
 
-    print("INITIALIZED AUDIO SYSTEM");
-
     return ffiModule.ma_stream_init(bufferMilliSec * sampleRate ~/ 1000,
         waitingBufferMilliSec * sampleRate ~/ 1000, channels, sampleRate);
   }
@@ -163,7 +161,7 @@ class AudioStreamImpl implements AudioStream {
   }
 
   @override
-  void setTreshold(double t) {
-    ffiModule.set_treshold(t);
+  void setThreshold(double t) {
+    ffiModule.set_threshold(t);
   }
 }

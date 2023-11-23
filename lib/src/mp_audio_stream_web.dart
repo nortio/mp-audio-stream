@@ -119,7 +119,7 @@ class AudioStreamImpl extends AudioStream {
   }
 
     @override
-  void setTreshold(double t) {
+  void setThreshold(double t) {
     // TODO: implement setTreshold
     throw UnimplementedError();
   }

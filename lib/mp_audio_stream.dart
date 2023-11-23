@@ -50,7 +50,7 @@ abstract class AudioStream {
 
   Stream<Float32List> inputStream();
 
-  void setTreshold(double t);
+  void setThreshold(double t);
 }
 
 /// Returns an `AudioStream` instance for running platform (web/others)

@@ -60,4 +60,4 @@ void init_port(int64_t, int64_t);
 #endif
 
 EXPORT
-void set_treshold(double);
+void set_threshold(double);

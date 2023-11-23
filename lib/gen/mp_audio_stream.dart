@@ -167,17 +167,17 @@ class AudioStreamNative {
           'init_port');
   late final _init_port = _init_portPtr.asFunction<void Function(int, int)>();
 
-  void set_treshold(
+  void set_threshold(
     double arg0,
   ) {
-    return _set_treshold(
+    return _set_threshold(
       arg0,
     );
   }
 
-  late final _set_tresholdPtr =
+  late final _set_thresholdPtr =
       _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Double)>>(
-          'set_treshold');
-  late final _set_treshold =
-      _set_tresholdPtr.asFunction<void Function(double)>();
+          'set_threshold');
+  late final _set_threshold =
+      _set_thresholdPtr.asFunction<void Function(double)>();
 }

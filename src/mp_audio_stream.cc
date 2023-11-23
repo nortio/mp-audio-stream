@@ -104,7 +104,10 @@ std::atomic<bool> continue_running{true};
 volatile static float treshold = 0.65f;
 volatile bool is_transmitting = false;
 
-void set_treshold(double t) { treshold = t; }
+void set_threshold(double t) { 
+  LOG("VAD threshold set to %f", t);
+  treshold = t; 
+}
 
 void encode_thread_func() {
   Stopwatch data_callback_stopwatch;
