@@ -14,22 +14,22 @@ void add_to_buffer(float *dest, float *src, int frame_count) {
   }
 }
 
-void print_info(const std::unordered_map<int, UserBuffer> &map, unsigned long long data_callback_counter, const char device_name[256]) {
+void print_info(const std::unordered_map<int, Buffer> &map, unsigned long long data_callback_counter, const char device_name[256]) {
   std::printf("\033[H\033[2J");
   std::printf("Callbacks: %llu\tDevice name: %s\n", data_callback_counter,
               device_name);
-  for (auto &keypair : map) {
-    auto size = keypair.second.buf_end - keypair.second.buf_start;
+  for (const auto&[id, buffer] : map) {
+    auto size = buffer.get_buf_end() - buffer.get_buf_start();
     auto isFull = "\x1b[32m";
-    if (size == keypair.second.buffer_size) {
+    if (size == buffer.get_buffer_size()) {
       isFull = "\x1b[31m";
-    } else if (size > (keypair.second.buffer_size / 2)) {
+    } else if (size > (buffer.get_buffer_size() / 2)) {
       isFull = "\x1b[33m";
     }
     std::printf("[%d]\t filled: %s%d\x1b[0m\texhaust_count: "
                 "%d\tlast_playable_size: %d\tfull_count: %d\n",
-                keypair.first, isFull, size, keypair.second.exhaust_count, size,
-                keypair.second.full_count);
+                id, isFull, size, buffer.get_exhaustion_count(), size,
+                buffer.get_full_count());
   }
 }
 

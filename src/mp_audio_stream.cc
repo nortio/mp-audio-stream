@@ -19,6 +19,7 @@ Copyright (c) 2023 nortio
 #define MA_NO_DECODING
 #define MA_NO_ENCODING
 #define MINIAUDIO_IMPLEMENTATION
+//#define MA_NO_PULSEAUDIO
 #include "../3rdparty/opus-1.4/include/opus.h"
 #include "dart-sdk-include/dart_api.h"
 #include "dart-sdk-include/dart_api_dl.h"
@@ -48,6 +49,7 @@ Buffer input_buffer(-1, mic_number_of_samples_per_packet * 10, 0);
 UserBuffer micBuffer;
 std::unordered_map<int, Buffer> active_speakers;
 Dart_Port data_callback_dart_port;
+Dart_Port level_dart_port;
 uint8_t example_data[3] = {0x01, 0x02, 0x03};
 float *mic_ready_packet_buffer = nullptr;
 std::thread encoding_thread;
@@ -64,6 +66,17 @@ void notify_dart_encoded(Dart_Port port, uint8_t *data, uint32_t len) {
   request.value.as_typed_data.values = data;
 
   const bool res = Dart_PostCObject_DL(port, &request);
+  if (!res) {
+    LOG("Could not post encoded data to dart isolate");
+  }
+}
+
+void notify_dart_mic_level(double level) {
+  Dart_CObject request;
+  request.type = Dart_CObject_kDouble;
+  request.value.as_double = level;
+
+  const bool res = Dart_PostCObject_DL(level_dart_port, &request);
   if (!res) {
     LOG("Could not post encoded data to dart isolate");
   }
@@ -87,6 +100,10 @@ float input_array[960];
 std::atomic<bool> ready{false};
 std::atomic<bool> continue_running{true};
 
+volatile static float treshold = 0.7f;
+
+void set_treshold(double t) { treshold = t; }
+
 void encode_thread_func() {
   using namespace std::literals;
   Stopwatch data_callback_stopwatch;
@@ -99,7 +116,7 @@ void encode_thread_func() {
   while (continue_running) {
 
     std::this_thread::sleep_for(need_to_wait);
-    //LOG("TIME FROM LAST CALLBACK: %f", data_callback_stopwatch.elapsed());
+    // LOG("TIME FROM LAST CALLBACK: %f", data_callback_stopwatch.elapsed());
 
     start = std::chrono::steady_clock::now();
 
@@ -107,19 +124,25 @@ void encode_thread_func() {
 
     if (input_buffer.is_ready(mic_number_of_samples_per_packet)) {
       input_buffer.consume(input_array, mic_number_of_samples_per_packet);
-    }
-
-
-    int encoded_bytes = opus_encode_float(opus_encoder, input_array,
-                                          mic_number_of_samples_per_packet,
-                                          encoded_packet, max_data_bytes_opus);
-    if (encoded_bytes < 0) {
-      //LOG("ERROR ENCODING OPUS PACKET: %s", opus_strerror(encoded_bytes));
-    }
+      auto level =
+          calculate_mic_level(input_array, mic_number_of_samples_per_packet);
+#ifndef SELFTEST
+      notify_dart_mic_level(level);
+#endif
+      if (level > treshold) {
+        int encoded_bytes = opus_encode_float(
+            opus_encoder, input_array, mic_number_of_samples_per_packet,
+            encoded_packet, max_data_bytes_opus);
+        if (encoded_bytes < 0) {
+          LOG("ERROR ENCODING OPUS PACKET: %s", opus_strerror(encoded_bytes));
+        }
 
 #ifndef SELFTEST
-    notify_dart_encoded(data_callback_dart_port, encoded_packet, encoded_bytes);
+        notify_dart_encoded(data_callback_dart_port, encoded_packet,
+                            encoded_bytes);
 #endif
+      }
+    }
 
     end = std::chrono::steady_clock::now();
 
@@ -144,18 +167,17 @@ void data_callback(ma_device *device, void *p_output, const void *p_input,
   data_callback_counter++;
 
 #ifdef PARLO_DEBUG
-  // print_info(active_speakers, data_callback_counter, device_name);
+  print_info(active_speakers, data_callback_counter, device_name);
 #endif
 
   input_buffer.push(input, frame_count);
   ready = true;
 
-  for (auto &speaker : active_speakers) {
-    auto &userBuffer = speaker.second;
-    userBuffer.consume(output, frame_count);
+  for (auto &[_, buffer] : active_speakers) {
+    buffer.consume(output, frame_count);
   }
 
-  st.start();
+  // st.start();
 }
 
 float *get_mic_data(int length) {
@@ -189,12 +211,12 @@ int ma_stream_push(float *buf, int length, int user_id) {
   return user_buffer->push(buf, length);
 }
 
-  static float decoded[5760];
+static float decoded[5760];
 
-
-int push_opus(uint8_t* data, int length, int user_id) {
-  int n_decoded = opus_decode_float(opus_decoder, data, length, decoded, 5760, 0);
-  if(n_decoded < 0) {
+int push_opus(uint8_t *data, int length, int user_id) {
+  int n_decoded =
+      opus_decode_float(opus_decoder, data, length, decoded, 5760, 0);
+  if (n_decoded < 0) {
     fprintf(stderr, "decoder failed: %s\n", opus_strerror(n_decoded));
     return -1;
   } else {
@@ -212,15 +234,6 @@ void ma_stream_uninit() {
     free(mic_ready_packet_buffer);
   }
 
-  /*   for (auto &buffer : active_speakers) {
-      std::cout << "buffer "<< buffer.first << std::endl;
-      auto buf = buffer.second.buffer;
-      if (buf) {
-        std::cout << "removing buffer " << buffer.first << std::endl;
-        free(buf);
-      }
-    } */
-
   active_speakers.clear();
   if (micBuffer.buffer) {
     free(micBuffer.buffer);
@@ -237,7 +250,10 @@ void ma_stream_uninit() {
 
 intptr_t init_dart_api_dl(void *data) { return Dart_InitializeApiDL(data); }
 
-void init_port(Dart_Port port) { data_callback_dart_port = port; }
+void init_port(Dart_Port port, Dart_Port l_port) {
+  data_callback_dart_port = port;
+  level_dart_port = l_port;
+}
 
 int ma_stream_init(int max_buffer_size_p, int keep_buffer_size_p,
                    int channels_p, int sample_rate_p) {

@@ -18,6 +18,7 @@ abstract class AudioStream {
   /// Initializes an audio stream and starts to play. Returns 0 then scucess.
   /// Calling more than once makes a new AudioStream, the previous device will be `uninit`ed.
   ReceivePort getPort();
+  ReceivePort getLevelPort();
 
   int init(
       {int bufferMilliSec = 3000,
@@ -48,6 +49,8 @@ abstract class AudioStream {
   bool isReady(int length);
 
   Stream<Float32List> inputStream();
+
+  void setTreshold(double t);
 }
 
 /// Returns an `AudioStream` instance for running platform (web/others)

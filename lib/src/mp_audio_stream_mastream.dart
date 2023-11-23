@@ -20,7 +20,9 @@ class AudioStreamImpl implements AudioStream {
   late AudioStreamNative ffiModule;
 
   late ReceivePort nativeRequests;
+  late ReceivePort levelPort;
   late int nativePort;
+
 
   @override
   int init(
@@ -44,9 +46,11 @@ class AudioStreamImpl implements AudioStream {
     }
 
     nativeRequests = ReceivePort();
+    levelPort = ReceivePort();
 
     nativePort = nativeRequests.sendPort.nativePort;
-    ffiModule.init_port(nativePort);
+    final levelPortSend = levelPort.sendPort.nativePort;
+    ffiModule.init_port(nativePort, levelPortSend);
 
     print("INITIALIZED AUDIO SYSTEM");
 
@@ -142,6 +146,12 @@ class AudioStreamImpl implements AudioStream {
   }
 
   @override
+  ReceivePort getLevelPort() {
+    return levelPort;
+  }
+
+
+  @override
   int opusPush(Uint8List buf, int userId) {
     final ffiBuf = calloc<Uint8>(buf.length);
     for (int i = 0; i < buf.length; i++) {
@@ -150,5 +160,10 @@ class AudioStreamImpl implements AudioStream {
     final result = ffiModule.push_opus(ffiBuf, buf.length, userId);
     calloc.free(ffiBuf);
     return result;
+  }
+
+  @override
+  void setTreshold(double t) {
+    ffiModule.set_treshold(t);
   }
 }

@@ -4,6 +4,9 @@
 cmake_minimum_required(VERSION 3.10)
 
 project(mp_audio_stream_library VERSION 0.0.1 LANGUAGES CXX C)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(mp_audio_stream SHARED
   "mp_audio_stream.cc"

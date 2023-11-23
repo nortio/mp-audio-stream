@@ -1,6 +1,5 @@
 #pragma once
 #include <cstdint>
-#include "utils.hpp"
 
 class Buffer {
 public:
@@ -14,6 +13,13 @@ public:
   int push(float* src, int length);
   void consume(float *output, int frame_count);
   bool is_ready(uint32_t length);
+  float level(uint32_t frame_count);
+
+  uint32_t get_buf_end() const {return buf_end;};
+  uint32_t get_buf_start() const { return buf_start;};
+  uint32_t get_exhaustion_count() const { return exhaust_count;};
+  uint32_t get_buffer_size() const { return max_buffer_size; };
+  uint32_t get_full_count() const { return full_count; };
 
   friend void add_to_buffer(float *dest, float *src, int frame_count);
 private:

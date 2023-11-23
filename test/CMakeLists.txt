@@ -3,11 +3,12 @@
 
 cmake_minimum_required(VERSION 3.0.0)
 project(parlo_stream_test VERSION 0.1.0)
+set(CMAKE_CXX_STANDARD 17)
 
 include(CTest)
 enable_testing()
 
-add_executable(parlo_stream_test main.cc ../src/mp_audio_stream.cc ../src/utils.cc ../src/user_buffer.cpp ../src/dart-sdk-include/dart_api_dl.c)
+add_executable(parlo_stream_test main.cc ../src/mp_audio_stream.cc ../src/user_buffer.cpp ../src/utils.cc ../src/dart-sdk-include/dart_api_dl.c)
 add_executable(parlo_mic_test mic.cc ../src/utils.cc)
 
 add_subdirectory("../3rdparty/rnnoise" "${CMAKE_CURRENT_BINARY_DIR}/rnnoise" EXCLUDE_FROM_ALL)

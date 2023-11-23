@@ -108,8 +108,19 @@ class AudioStreamImpl extends AudioStream {
   }
 
   @override
+  ReceivePort getLevelPort() {
+    throw UnimplementedError();
+  }
+
+  @override
   int opusPush(Uint8List buf, int userId) {
     // TODO: implement opusPush
+    throw UnimplementedError();
+  }
+
+    @override
+  void setTreshold(double t) {
+    // TODO: implement setTreshold
     throw UnimplementedError();
   }
 }

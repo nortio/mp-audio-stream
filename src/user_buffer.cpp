@@ -51,6 +51,22 @@ Buffer::~Buffer() {
   }
 }
 
+float Buffer::level(uint32_t frame_count) {
+  float acc = 0;
+  for (int i = 0; i < frame_count; i++) {
+    acc += buffer[i] * buffer[i];
+  }
+  // https://dsp.stackexchange.com/questions/2951/loudness-of-pcm-stream/2953#2953
+  // Root mean square calculates the average loudness
+  float average_loudness = std::sqrt(acc / frame_count);
+
+  // Convert to logarithmic scale. -96db is lowest value
+  float db = 20.0 * std::log10(average_loudness);
+  float level = std::max(db, -96.0f) / 96.0f + 1.0f;
+
+  return level;
+}
+
 /**
  * @brief Pushes new data into buffer
  * 

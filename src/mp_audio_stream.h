@@ -51,4 +51,7 @@ EXPORT
 intptr_t init_dart_api_dl(void* data);
 
 EXPORT
-void init_port(int64_t);
+void init_port(int64_t, int64_t);
+
+EXPORT
+void set_treshold(double);

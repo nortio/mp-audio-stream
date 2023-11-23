@@ -16,14 +16,14 @@ Copyright (c) 2023 nortio
 #include <stdlib.h>
 
 #include "../src/mp_audio_stream.h"
-#include "../src/utils.h"
+#include "../src/utils.hpp"
 #define PI 3.14159265
 
 static bool continueRunning = true;
 const int sample_rate = 48000;
 const int channels = 1;
 const int max_buffer_size_ms = 3000;
-const int wait_buffer_size_ms = 50;
+const int wait_buffer_size_ms = 40;
 const int emulated_lag_range = 10;
 const int min_lag = 10;
 
@@ -37,12 +37,12 @@ int main() {
 
   ma_stream_init(max_buffer_size, wait_buffer_size, channels, sample_rate);
 
-  int bufLength = 8820; // 20ms packet at 44100 hz
+  int bufLength = 960; // 20ms packet at 44100 hz
 
   float *buf = (float *)calloc(bufLength, sizeof(float));
   float *buf2 = (float *)calloc(bufLength, sizeof(float));
 
-  int freq = 440;
+  int freq = 1000;
 
   signal(SIGINT, closeSignal);
 
@@ -59,12 +59,12 @@ int main() {
 
     // They should cancel out for the first 100 packets
     ma_stream_push(buf, bufLength, 0);
-    if(i < 100) {
+/*     if(i < 100) {
       ma_stream_push(buf2, bufLength, 1);
-    }
+    } */
     // ma_stream_push(buf, bufLength, false, 1);
 
-    //std::this_thread::sleep_for(std::chrono::milliseconds(lag));
+    std::this_thread::sleep_for(std::chrono::milliseconds(lag));
     i++;
   }
   LOG("Closing");

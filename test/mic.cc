@@ -12,7 +12,7 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "../3rdparty/rnnoise/rnnoise-src/include/rnnoise.h"
 #include "../src/miniaudio.h"
-#include "../src/utils.h"
+#include "../src/utils.hpp"
 
 const int sample_rate = 48000;
 const int channels = 1;

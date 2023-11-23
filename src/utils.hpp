@@ -1,12 +1,13 @@
 #pragma once
+#include "user_buffer.h"
 #define NOMINMAX
 #include "miniaudio.h"
-#include <chrono>
 #include <algorithm>
+#include <chrono>
+#include <cmath>
 #include <iostream>
 #include <stdint.h>
 #include <unordered_map>
-#include <cmath>
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -44,9 +45,10 @@ void consume_from_buffer(float *output, UserBuffer *user_buffer,
 void consume_from_buffer_mic(float *output, UserBuffer *user_buffer,
                              int frame_count);
 
-void print_info(const std::unordered_map<int, UserBuffer> &map,
+void print_info(const std::unordered_map<int, Buffer> &map,
                 unsigned long long data_callback_counter,
-                char device_name[256]);
+                const char device_name[256]);
+
 int buffer_push(UserBuffer *userBuffer, float *src, int length);
 
 inline float calculate_mic_level(float *input, uint32_t frame_count) {
