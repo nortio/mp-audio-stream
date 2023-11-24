@@ -13,10 +13,13 @@
 #define LOG__INT(fmt, ...)                                                     \
   __android_log_print(ANDROID_LOG_INFO, "native_audio", fmt "%s", __VA_ARGS__);
 #define LOG(...) LOG__INT(__VA_ARGS__, "\n")
-#else
+#elif __linux__
 #define LOG__INT(fmt, ...)                                                     \
   std::printf("\x1b[90m[native_audio - INFO] \x1b[0m" fmt "%s", __VA_ARGS__);
 #define LOG(...) LOG__INT(__VA_ARGS__, "\n")
+#elif _WIN32
+#define LOG(fmt, ...)                                                     \
+  std::printf("\x1b[90m[native_audio - INFO] \x1b[0m" fmt, __VA_ARGS__); std::printf("\n");
 #endif
 
 struct UserBuffer {
@@ -63,7 +66,7 @@ inline float calculate_mic_level(float *input, uint32_t frame_count) {
 
   // Convert to logarithmic scale. -96db is lowest value
   float db = 20.0 * std::log10(average_loudness);
-  float level = std::max(db, -96.0f) / 96.0f + 1.0f;
+  float level = (db > -96.0f ? db : -96.0f) / 96.0f + 1.0f;
 
   return level;
 }
