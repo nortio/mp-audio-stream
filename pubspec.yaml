@@ -4,22 +4,19 @@ version: 0.1.5
 repository: https://github.com/nortio/mp-audio-stream
 
 environment:
-  sdk: ">=2.17.5 <3.0.0"
+  sdk: '>=3.2.0 <4.0.0'
   flutter: ">=2.5.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_web_plugins:
-    sdk: flutter
-  plugin_platform_interface: ^2.0.2
   ffi: ^2.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
-  ffigen: ^9.0.1
+  flutter_lints: ^3.0.1
+  ffigen: ^10.0.0
 
 ffigen:
   name: 'AudioStreamNative'
@@ -44,6 +41,3 @@ flutter:
         ffiPlugin: true
       windows:
         ffiPlugin: true
-
-  assets:
-    - packages/mp_audio_stream/js/audio_stream.js
