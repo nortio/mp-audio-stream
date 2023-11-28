@@ -6,6 +6,7 @@ Copyright (c) 2023 nortio
 
 #include <atomic>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -31,7 +32,9 @@ Copyright (c) 2023 nortio
 #define DEVICE_FORMAT ma_format_f32
 
 static char device_name[256] = "";
-static ma_device *device = NULL;
+static ma_device device_playback;
+static ma_device device_capture;
+static ma_context context;
 unsigned long long data_callback_counter = 0;
 static int sample_rate = 48000;
 static int channels = 1;
@@ -44,7 +47,6 @@ OpusDecoder *opus_decoder;
 #define max_data_bytes_opus 1275 * 3
 uint8_t encoded_packet[max_data_bytes_opus];
 Buffer input_buffer(-1, mic_number_of_samples_per_packet * 10, 0);
-UserBuffer micBuffer;
 std::unordered_map<int, Buffer> active_speakers;
 
 uint8_t example_data[3] = {0x01, 0x02, 0x03};
@@ -104,9 +106,9 @@ std::atomic<bool> continue_running{true};
 volatile static float treshold = 0.65f;
 volatile bool is_transmitting = false;
 
-void set_threshold(double t) { 
+void set_threshold(double t) {
   LOG("VAD threshold set to %f", t);
-  treshold = t; 
+  treshold = t;
 }
 
 void encode_thread_func() {
@@ -180,19 +182,12 @@ void data_callback(ma_device *device, void *p_output, const void *p_input,
 
   // LOG("t: %f", st.elapsed())
   float *output = (float *)p_output;
-  float *input = (float *)p_input;
 
   data_callback_counter++;
 
 #ifdef PARLO_DEBUG
   print_info(active_speakers, data_callback_counter, device_name);
 #endif
-
-#ifdef PARLO_MIC_DEBUG
-  print_mic_level(data_callback_counter, input, frame_count, is_transmitting);
-#endif
-
-  input_buffer.push(input, frame_count);
 
   for (auto &[_, buffer] : active_speakers) {
     buffer.consume(output, frame_count);
@@ -201,18 +196,30 @@ void data_callback(ma_device *device, void *p_output, const void *p_input,
   // st.start();
 }
 
+void data_callback_capture(ma_device *device, void *p_output,
+                           const void *p_input, ma_uint32 frame_count) {
+  float *input = (float *)p_input;
+#ifdef PARLO_MIC_DEBUG
+  print_mic_level(data_callback_counter, input, frame_count, is_transmitting);
+#endif
+
+  input_buffer.push(input, frame_count);
+}
+
 float *get_mic_data(int length) {
+  // TODO: remove this method here and on dart side
   // float *out = (float *)calloc(length, sizeof(float));
-  memset(mic_ready_packet_buffer, 0,
-         mic_number_of_samples_per_packet * sizeof(float));
-  consume_from_buffer(mic_ready_packet_buffer, &micBuffer, length);
+  // memset(mic_ready_packet_buffer, 0,
+  //       mic_number_of_samples_per_packet * sizeof(float));
+  // consume_from_buffer(mic_ready_packet_buffer, &micBuffer, length);
 
   // notified = false;
   return mic_ready_packet_buffer;
 };
 
 bool is_mic_ready(uint32_t length) {
-  return (micBuffer.buf_end - micBuffer.buf_start) >= length;
+  // TODO: remove this method here and on dart side
+  return false;
 }
 
 // TODO: function to remove users that have disconnected from channel
@@ -238,7 +245,7 @@ int push_opus(uint8_t *data, int length, int user_id) {
   int n_decoded =
       opus_decode_float(opus_decoder, data, length, decoded, 5760, 0);
   if (n_decoded < 0) {
-    fprintf(stderr, "decoder failed: %s\n", opus_strerror(n_decoded));
+    ERROR("decoder failed: %s", opus_strerror(n_decoded));
     return -1;
   } else {
     ma_stream_push(decoded, n_decoded, user_id);
@@ -249,23 +256,24 @@ int push_opus(uint8_t *data, int length, int user_id) {
 void ma_stream_uninit() {
   LOG("Uninitializing audio module");
 
-  ma_device_uninit(device);
+  ma_device_uninit(&device_playback);
+  ma_context_uninit(&context);
+
+  LOG("Miniaudio unitialized correctly");
 
   if (mic_ready_packet_buffer) {
     free(mic_ready_packet_buffer);
   }
 
   active_speakers.clear();
-  if (micBuffer.buffer) {
-    free(micBuffer.buffer);
-  }
 
-  // notify_loop = false;
   continue_running = false;
   encoding_thread.join();
 
   opus_decoder_destroy(opus_decoder);
   opus_encoder_destroy(opus_encoder);
+
+  LOG("Destroyed opus encoder and decoder")
 }
 
 int ma_stream_init(int max_buffer_size_p, int keep_buffer_size_p,
@@ -276,26 +284,24 @@ int ma_stream_init(int max_buffer_size_p, int keep_buffer_size_p,
   opus_encoder =
       opus_encoder_create(sample_rate, channels, OPUS_APPLICATION_VOIP, &err);
   if (err) {
-    std::cerr << "failed to create opus encoder: " << opus_strerror(err)
-              << std::endl;
+    ERROR("failed to create opus encoder: %s", opus_strerror(err));
     return -1;
   }
 
   opus_decoder = opus_decoder_create(sample_rate, channels, &err);
   if (err) {
-    std::cerr << "failed to create opus encoder: " << opus_strerror(err)
-              << std::endl;
+    ERROR("failed to create opus encoder: %s", opus_strerror(err))
     return -1;
   }
 
   err = opus_encoder_ctl(opus_encoder, OPUS_SET_BITRATE(40000));
   if (err) {
-    std::cerr << "failed to set bitrate: " << opus_strerror(err) << std::endl;
+    ERROR("failed to set bitrate: %s", opus_strerror(err));
     return -1;
   }
   err = opus_encoder_ctl(opus_encoder, OPUS_SET_SIGNAL(OPUS_SIGNAL_VOICE));
   if (err) {
-    std::cerr << "failed to set bitrate: " << opus_strerror(err) << std::endl;
+    ERROR("failed to set bitrate: %s", opus_strerror(err));
     return -1;
   }
 
@@ -305,46 +311,62 @@ int ma_stream_init(int max_buffer_size_p, int keep_buffer_size_p,
   sample_rate = sample_rate_p;
   mic_number_of_samples_per_packet = 0.02 * sample_rate;
 
-  device = (ma_device *)calloc(1, sizeof(ma_device));
-
-  auto state = ma_atomic_device_state_get(&(device->state));
+  auto state = ma_atomic_device_state_get(&device_playback.state);
   if (state != ma_device_state_uninitialized) {
-    ma_device_uninit(device);
+    ma_device_uninit(&device_playback);
   }
 
-  ma_device_config device_config;
+  if (ma_context_init(NULL, 0, NULL, &context) != MA_SUCCESS) {
+    ERROR("Error initializing miniaudio context");
+    return -1;
+  }
 
-  device_config = ma_device_config_init(ma_device_type_duplex);
-  device_config.playback.format = DEVICE_FORMAT;
-  device_config.playback.channels = channels;
-  device_config.capture.format = DEVICE_FORMAT;
-  device_config.capture.channels = channels;
-  device_config.sampleRate = sample_rate;
-  device_config.dataCallback = data_callback;
+  ma_device_config device_config_playback;
 
-  device_config.periodSizeInFrames = 960; // 20ms
-  // device_config.periodSizeInMilliseconds = 20;
-  // deviceConfig.periods = 1;
-  device_config.performanceProfile = ma_performance_profile_low_latency;
+  device_config_playback = ma_device_config_init(ma_device_type_playback);
+  device_config_playback.playback.format = DEVICE_FORMAT;
+  device_config_playback.playback.channels = channels;
+  device_config_playback.sampleRate = sample_rate;
+  device_config_playback.dataCallback = data_callback;
+  device_config_playback.performanceProfile =
+      ma_performance_profile_low_latency;
 
-  if (ma_device_init(NULL, &device_config, device) != MA_SUCCESS) {
-    printf("Failed to open playback device.\n");
+  if (ma_device_init(&context, &device_config_playback, &device_playback) !=
+      MA_SUCCESS) {
+    ERROR("Failed to init playback device.\n");
     return -4;
   }
 
-  strcpy(device_name, device->playback.name);
+  ma_device_config device_config_capture;
+
+  device_config_capture = ma_device_config_init(ma_device_type_capture);
+  device_config_capture.capture.format = DEVICE_FORMAT;
+  device_config_capture.capture.channels = channels;
+  device_config_capture.sampleRate = sample_rate;
+  device_config_capture.dataCallback = data_callback_capture;
+  device_config_capture.periodSizeInFrames = 960; // 20ms
+  device_config_capture.performanceProfile = ma_performance_profile_low_latency;
+
+  if (ma_device_init(&context, &device_config_capture, &device_capture) !=
+      MA_SUCCESS) {
+    ERROR("Failed to init capture device.\n");
+    return -4;
+  }
+
+  strcpy(device_name, device_playback.playback.name);
 
   max_buffer_size = max_buffer_size_p;
   wait_buffer_size = keep_buffer_size_p;
 
-  micBuffer.id = 0;
-  micBuffer.buffer_size = max_buffer_size;
-  micBuffer.minimum_size_to_recover = wait_buffer_size;
-  micBuffer.buffer = (float *)calloc(max_buffer_size, sizeof(float));
+  if (ma_device_start(&device_playback) != MA_SUCCESS) {
+    ERROR("Failed to start playback device.\n");
+    ma_device_uninit(&device_playback);
+    return -5;
+  }
 
-  if (ma_device_start(device) != MA_SUCCESS) {
-    printf("Failed to start playback device.\n");
-    ma_device_uninit(device);
+  if (ma_device_start(&device_capture) != MA_SUCCESS) {
+    ERROR("Failed to start capture device.\n");
+    ma_device_uninit(&device_capture);
     return -5;
   }
 

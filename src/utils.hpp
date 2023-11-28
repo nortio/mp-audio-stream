@@ -22,6 +22,20 @@
   std::printf("\x1b[90m[native_audio - INFO] \x1b[0m" fmt, __VA_ARGS__); std::printf("\n");
 #endif
 
+#ifdef __ANDROID__
+#include <android/log.h>
+#define ERROR__INT(fmt, ...)                                                     \
+  __android_log_print(ANDROID_LOG_ERROR, "native_audio", fmt "%s", __VA_ARGS__);
+#define ERROR(...) ERROR__INT(__VA_ARGS__, "\n")
+#elif __linux__
+#define ERROR__INT(fmt, ...)                                                     \
+  std::fprintf(stderr, "\x1b[90m[native_audio - INFO] \x1b[31m" fmt "%s", __VA_ARGS__);
+#define ERROR(...) ERROR__INT(__VA_ARGS__, "\n")
+#elif _WIN32
+#define ERROR(fmt, ...)                                                     \
+  std::fprintf(stderr, "\x1b[90m[native_audio - INFO] \x1b[31m" fmt, __VA_ARGS__); std::fprintf(stderr, "\n");
+#endif
+
 struct UserBuffer {
   int id = -1;
   uint32_t buffer_size;
