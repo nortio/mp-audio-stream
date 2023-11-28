@@ -74,24 +74,12 @@ class AudioStream {
     return result;
   }
 
-  Float32List getMicData(int length) {
-    final pointer = _ffiModule.get_mic_data(length);
-    // Copy the list
-    final floatArray = Float32List.fromList(pointer.asTypedList(length));
-    //calloc.free(pointer);
-    return floatArray;
-  }
-
   void uninit() {
     _ffiModule.ma_stream_uninit();
   }
 
   void removeBuffer(int userId) {
     _ffiModule.parlo_remove_user(userId);
-  }
-
-  bool isReady(int length) {
-    return _ffiModule.is_mic_ready(length);
   }
 
   Stream<Float32List> inputStream() {

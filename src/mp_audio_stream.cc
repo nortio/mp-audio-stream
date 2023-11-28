@@ -49,8 +49,6 @@ uint8_t encoded_packet[max_data_bytes_opus];
 Buffer input_buffer(-1, mic_number_of_samples_per_packet * 10, 0);
 std::unordered_map<int, Buffer> active_speakers;
 
-uint8_t example_data[3] = {0x01, 0x02, 0x03};
-float *mic_ready_packet_buffer = nullptr;
 std::thread encoding_thread;
 
 #ifndef SELFTEST
@@ -206,22 +204,6 @@ void data_callback_capture(ma_device *device, void *p_output,
   input_buffer.push(input, frame_count);
 }
 
-float *get_mic_data(int length) {
-  // TODO: remove this method here and on dart side
-  // float *out = (float *)calloc(length, sizeof(float));
-  // memset(mic_ready_packet_buffer, 0,
-  //       mic_number_of_samples_per_packet * sizeof(float));
-  // consume_from_buffer(mic_ready_packet_buffer, &micBuffer, length);
-
-  // notified = false;
-  return mic_ready_packet_buffer;
-};
-
-bool is_mic_ready(uint32_t length) {
-  // TODO: remove this method here and on dart side
-  return false;
-}
-
 // TODO: function to remove users that have disconnected from channel
 
 int ma_stream_push(float *buf, int length, int user_id) {
@@ -260,10 +242,6 @@ void ma_stream_uninit() {
   ma_context_uninit(&context);
 
   LOG("Miniaudio unitialized correctly");
-
-  if (mic_ready_packet_buffer) {
-    free(mic_ready_packet_buffer);
-  }
 
   active_speakers.clear();
 
@@ -372,9 +350,6 @@ int ma_stream_init(int max_buffer_size_p, int keep_buffer_size_p,
 
   active_speakers = {};
 
-  mic_ready_packet_buffer =
-      (float *)calloc(mic_number_of_samples_per_packet, sizeof(float));
-
   LOG("Native audio module initialized");
 
   /*   notify_loop = true;*/
@@ -392,15 +367,3 @@ void parlo_remove_user(int userId) {
       int res = active_speakers.erase(userId);
     } */
 }
-
-// TODO: reimplement these
-/* ma_uint32 ma_stream_stat_exhaust_count() {
-  return globalUserBuffer->exhaust_count;
-}
-
-ma_uint32 ma_stream_stat_full_count() { return globalUserBuffer->full_count; }
-
-void ma_stream_stat_reset() {
-  globalUserBuffer->full_count = 0;
-  globalUserBuffer->exhaust_count = 0;
-} */

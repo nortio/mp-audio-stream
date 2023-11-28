@@ -88,20 +88,6 @@ class AudioStreamNative {
   late final _push_opus = _push_opusPtr
       .asFunction<int Function(ffi.Pointer<ffi.Uint8>, int, int)>();
 
-  ffi.Pointer<ffi.Float> get_mic_data(
-    int arg0,
-  ) {
-    return _get_mic_data(
-      arg0,
-    );
-  }
-
-  late final _get_mic_dataPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Float> Function(ffi.Int)>>(
-          'get_mic_data');
-  late final _get_mic_data =
-      _get_mic_dataPtr.asFunction<ffi.Pointer<ffi.Float> Function(int)>();
-
   void ma_stream_stat_reset() {
     return _ma_stream_stat_reset();
   }
@@ -124,19 +110,6 @@ class AudioStreamNative {
           'parlo_remove_user');
   late final _parlo_remove_user =
       _parlo_remove_userPtr.asFunction<void Function(int)>();
-
-  bool is_mic_ready(
-    int arg0,
-  ) {
-    return _is_mic_ready(
-      arg0,
-    );
-  }
-
-  late final _is_mic_readyPtr =
-      _lookup<ffi.NativeFunction<ffi.Bool Function(ffi.Uint32)>>(
-          'is_mic_ready');
-  late final _is_mic_ready = _is_mic_readyPtr.asFunction<bool Function(int)>();
 
   int init_dart_api_dl(
     ffi.Pointer<ffi.Void> data,

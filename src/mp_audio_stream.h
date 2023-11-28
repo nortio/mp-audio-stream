@@ -35,21 +35,10 @@ EXPORT
 int push_opus(uint8_t*, int, int);
 
 EXPORT
-float * get_mic_data(int);
-/* EXPORT
-ma_uint32 ma_stream_stat_exhaust_count(void); 
-
-EXPORT
-ma_uint32 ma_stream_stat_full_count(void);  */
-
-EXPORT
 void ma_stream_stat_reset(void);
 
 EXPORT
 void parlo_remove_user(int);
-
-EXPORT
-bool is_mic_ready(uint32_t);
 
 #ifndef SELFTEST
 EXPORT
