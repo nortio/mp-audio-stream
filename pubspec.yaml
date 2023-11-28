@@ -14,7 +14,6 @@ dependencies:
     sdk: flutter
   plugin_platform_interface: ^2.0.2
   ffi: ^2.0.1
-  js: ^0.6.4
 
 dev_dependencies:
   flutter_test:
@@ -45,7 +44,6 @@ flutter:
         ffiPlugin: true
       windows:
         ffiPlugin: true
-      web:
 
   assets:
     - packages/mp_audio_stream/js/audio_stream.js

@@ -7,63 +7,148 @@ Copyright (c) 2023 nortio
 /// A multi-platform audio stream output library for real-time generated wave data
 library audio_stream;
 
+import 'dart:async';
+import 'dart:ffi';
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'src/mp_audio_stream_mastream.dart'
-    if (dart.library.html) 'src/mp_audio_stream_web.dart';
+import 'package:ffi/ffi.dart';
 
-/// Contol class for AudioStream. Use `getAudioStream()` to get its instance.
-abstract class AudioStream {
+import 'gen/mp_audio_stream.dart';
+
+/// Control class for AudioStream on "not" web platform. Use `getAudioStream()` to get its instance.
+class AudioStream {
+  late AudioStreamNative _ffiModule;
+
+  late ReceivePort _nativeRequests;
+  late ReceivePort _levelPort;
+  late int nativePort;
+
   /// Initializes an audio stream and starts to play. Returns 0 then scucess.
   /// Calling more than once makes a new AudioStream, the previous device will be `uninit`ed.
-  ReceivePort getPort();
-  ReceivePort getLevelPort();
-
   int init(
       {int bufferMilliSec = 3000,
       int waitingBufferMilliSec = 100,
       int channels = 1,
-      int sampleRate = 44100});
+      int sampleRate = 48000}) {
+    final dynLib = (Platform.isLinux || Platform.isAndroid)
+        ? DynamicLibrary.open("libmp_audio_stream.so")
+        : Platform.isWindows
+            ? DynamicLibrary.open("mp_audio_stream.dll")
+            : (Platform.isMacOS || Platform.isIOS)
+                ? DynamicLibrary.executable()
+                : DynamicLibrary.executable();
 
-  /// Release current audio stream.
-  void uninit();
+    _ffiModule = AudioStreamNative(dynLib);
+
+    final res = _ffiModule.init_dart_api_dl(NativeApi.initializeApiDLData);
+    if (res != 0) {
+      throw Exception("Failed to initialize dynamic dart api in audio module");
+    }
+
+    _nativeRequests = ReceivePort();
+    _levelPort = ReceivePort();
+
+    nativePort = _nativeRequests.sendPort.nativePort;
+    final levelPortSend = _levelPort.sendPort.nativePort;
+    _ffiModule.init_port(nativePort, levelPortSend);
+
+    return _ffiModule.ma_stream_init(bufferMilliSec * sampleRate ~/ 1000,
+        waitingBufferMilliSec * sampleRate ~/ 1000, channels, sampleRate);
+  }
 
   /// Resumes audio stream.
   /// For web platform, you should call this from some user-action to activate `AudioContext`.
   /// Ignored on platforms other than web, but recommended to call this to keep multi-platform ready.
-  void resume();
+  void resume() {}
 
   /// Pushes wave data (float32, -1.0 to 1.0) into audio stream. When buffer is full, the input is ignored.
-  int push(Float32List buf, int userId);
-  int opusPush(Uint8List buf, int userId);
-  void removeBuffer(int userId);
+  int push(Float32List buf, int userId) {
+    final ffiBuf = calloc<Float>(buf.length);
+    for (int i = 0; i < buf.length; i++) {
+      ffiBuf[i] = buf[i];
+    }
+    final result = _ffiModule.ma_stream_push(ffiBuf, buf.length, userId);
+    calloc.free(ffiBuf);
+    return result;
+  }
 
-  Float32List getMicData(int length);
-/*   /// Returns statistics about buffer full/exhaust between the last reset and now
-  AudioStreamStat stat(int userId);
+  Float32List getMicData(int length) {
+    final pointer = _ffiModule.get_mic_data(length);
+    // Copy the list
+    final floatArray = Float32List.fromList(pointer.asTypedList(length));
+    //calloc.free(pointer);
+    return floatArray;
+  }
 
-  /// Resets all statistics as zero
-  void resetStat(); */
+  void uninit() {
+    _ffiModule.ma_stream_uninit();
+  }
 
-  bool isReady(int length);
+  void removeBuffer(int userId) {
+    _ffiModule.parlo_remove_user(userId);
+  }
 
-  Stream<Float32List> inputStream();
+  bool isReady(int length) {
+    return _ffiModule.is_mic_ready(length);
+  }
 
-  void setThreshold(double t);
+  Stream<Float32List> inputStream() {
+    bool started = false;
+    late StreamSubscription<dynamic> sub;
+
+    void stopSub() {
+      started = false;
+      sub.cancel();
+    }
+
+    final controller = StreamController<Float32List>(
+        onListen: () {
+          started = true;
+        },
+        onPause: () {
+          started = false;
+        },
+        onResume: () {
+          started = true;
+        },
+        onCancel: stopSub);
+
+    sub = _nativeRequests.listen((message) {
+      Uint8List data = message;
+/*       if (started) {
+        controller.add(getMicData(960));
+      } */
+    });
+
+    return controller.stream;
+  }
+
+  ReceivePort getPort() {
+    return _nativeRequests;
+  }
+
+  ReceivePort getLevelPort() {
+    return _levelPort;
+  }
+
+
+  int opusPush(Uint8List buf, int userId) {
+    final ffiBuf = calloc<Uint8>(buf.length);
+    for (int i = 0; i < buf.length; i++) {
+      ffiBuf[i] = buf[i];
+    }
+    final result = _ffiModule.push_opus(ffiBuf, buf.length, userId);
+    calloc.free(ffiBuf);
+    return result;
+  }
+
+  void setThreshold(double t) {
+    _ffiModule.set_threshold(t);
+  }
 }
+
 
 /// Returns an `AudioStream` instance for running platform (web/others)
-AudioStream getAudioStream() => AudioStreamImpl();
-
-/// Statistics about buffer full/exhaust
-class AudioStreamStat {
-  final int userId;
-  final int full;
-  final int exhaust;
-  AudioStreamStat(
-      {required this.full, required this.exhaust, required this.userId});
-
-  factory AudioStreamStat.empty() =>
-      AudioStreamStat(full: 0, exhaust: 0, userId: 0);
-}
+AudioStream getAudioStream() => AudioStream();
