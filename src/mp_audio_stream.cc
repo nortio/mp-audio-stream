@@ -137,7 +137,7 @@ void encode_thread_func() {
       if (is_over_treshold || is_transmitting) {
         if (!is_over_treshold) {
           if (std::chrono::steady_clock::now() - last_activation >
-              500000000ns) {
+              Duration::ms500) {
             is_transmitting = false;
             continue;
           }
@@ -167,7 +167,7 @@ void encode_thread_func() {
     std::chrono::duration<int64_t, std::nano> duration = end - start;
     // LOG("Encoding + notification duration: %f", duration.count());
 
-    need_to_wait = Duration::ns20 - duration;
+    need_to_wait = Duration::ms20 - duration;
 
     data_callback_stopwatch.start();
   }
