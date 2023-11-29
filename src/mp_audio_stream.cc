@@ -99,80 +99,12 @@ void init_port(Dart_Port port, Dart_Port l_port) {
 
 float input_array[960];
 
-std::atomic<bool> continue_running{true};
-
 volatile static float treshold = 0.65f;
 volatile bool is_transmitting = false;
 
 void set_threshold(double t) {
     LOG("VAD threshold set to %f", t);
     treshold = t;
-}
-
-void encode_thread_func() {
-    Stopwatch data_callback_stopwatch;
-    auto last_activation = std::chrono::steady_clock::now();
-    auto end = std::chrono::steady_clock::now();
-    auto start = std::chrono::steady_clock::now();
-    std::chrono::duration<int64_t, std::nano> need_to_wait{0};
-    LOG("Initializing thread");
-
-    while (continue_running) {
-
-        std::this_thread::sleep_for(need_to_wait);
-        // LOG("TIME FROM LAST CALLBACK: %f",
-        // data_callback_stopwatch.elapsed());
-
-        start = std::chrono::steady_clock::now();
-
-        memset(input_array, 0, sizeof(input_array));
-
-        if (input_buffer.is_ready(mic_number_of_samples_per_packet)) {
-            input_buffer.consume(input_array, mic_number_of_samples_per_packet);
-            auto level = calculate_mic_level(input_array,
-                                             mic_number_of_samples_per_packet);
-#ifndef SELFTEST
-            notify_dart_mic_level(level);
-#endif
-            bool is_over_treshold = level > treshold;
-            if (is_over_treshold || is_transmitting) {
-                if (!is_over_treshold) {
-                    if (std::chrono::steady_clock::now() - last_activation >
-                        Duration::ms500) {
-                        is_transmitting = false;
-                        continue;
-                    }
-                } else {
-                    is_transmitting = true;
-                    last_activation = std::chrono::steady_clock::now();
-                }
-
-                int encoded_bytes = opus_encode_float(
-                    opus_encoder, input_array, mic_number_of_samples_per_packet,
-                    encoded_packet, max_data_bytes_opus);
-                if (encoded_bytes < 0) {
-                    LOG("ERROR ENCODING OPUS PACKET: %s",
-                        opus_strerror(encoded_bytes));
-                }
-
-#ifndef SELFTEST
-                notify_dart_encoded(data_callback_dart_port, encoded_packet,
-                                    encoded_bytes);
-#endif
-            } else {
-                is_transmitting = false;
-            }
-        }
-
-        end = std::chrono::steady_clock::now();
-
-        std::chrono::duration<int64_t, std::nano> duration = end - start;
-        // LOG("Encoding + notification duration: %f", duration.count());
-
-        need_to_wait = Duration::ms20 - duration;
-
-        data_callback_stopwatch.start();
-    }
 }
 
 Stopwatch st;
@@ -196,14 +128,55 @@ void data_callback(ma_device *device, void *p_output, const void *p_input,
     // st.start();
 }
 
+auto last_activation = std::chrono::steady_clock::now();
+
 void data_callback_capture(ma_device *device, void *p_output,
                            const void *p_input, ma_uint32 frame_count) {
     float *input = (float *)p_input;
 #ifdef PARLO_MIC_DEBUG
     print_mic_level(data_callback_counter, input, frame_count, is_transmitting);
 #endif
+    int encoded_bytes = 0;
+    if (frame_count == mic_number_of_samples_per_packet) {
+        //memcpy(input_array, p_input, frame_count*sizeof(float));
+        auto level =
+            calculate_mic_level(input, mic_number_of_samples_per_packet);
+#ifndef SELFTEST
+        notify_dart_mic_level(level);
+#endif
+        bool is_over_treshold = level > treshold;
+        if (is_over_treshold || is_transmitting) {
+            if (!is_over_treshold) {
+                if (std::chrono::steady_clock::now() - last_activation >
+                    Duration::ms500) {
+                    is_transmitting = false;
+                    return;
+                }
+            } else {
+                is_transmitting = true;
+                last_activation = std::chrono::steady_clock::now();
+            }
 
-    input_buffer.push(input, frame_count);
+            encoded_bytes = opus_encode_float(
+                opus_encoder, input, mic_number_of_samples_per_packet,
+                encoded_packet, max_data_bytes_opus);
+            if (encoded_bytes < 0) {
+                LOG("ERROR ENCODING OPUS PACKET: %s",
+                    opus_strerror(encoded_bytes));
+            }
+
+#ifndef SELFTEST
+            notify_dart_encoded(data_callback_dart_port, encoded_packet,
+                                encoded_bytes);
+#endif
+            //push_opus(encoded_packet, encoded_bytes, 10);
+        } else {
+            is_transmitting = false;
+        }
+    } else {
+        LOG("frame_count mismatch: got %d, expected %d", frame_count, mic_number_of_samples_per_packet);
+    }
+
 }
 
 // TODO: function to remove users that have disconnected from channel
@@ -241,14 +214,12 @@ void ma_stream_uninit() {
     LOG("Uninitializing audio module");
 
     ma_device_uninit(&device_playback);
+    ma_device_uninit(&device_capture);
     ma_context_uninit(&context);
 
     LOG("Miniaudio unitialized correctly");
 
     active_speakers.clear();
-
-    continue_running = false;
-    encoding_thread.join();
 
     opus_decoder_destroy(opus_decoder);
     opus_encoder_destroy(opus_encoder);
@@ -354,9 +325,6 @@ int ma_stream_init(int max_buffer_size_p, int keep_buffer_size_p,
     active_speakers = {};
 
     LOG("Native audio module initialized");
-
-    /*   notify_loop = true;*/
-    encoding_thread = std::thread(encode_thread_func);
 
     return 0;
 }
