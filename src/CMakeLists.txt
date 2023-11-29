@@ -13,6 +13,7 @@ add_library(mp_audio_stream SHARED
   "user_buffer.cpp"
   "dart-sdk-include/dart_api_dl.c"
   "utils.cc"
+  "miniaudio.c"
 )
 
 if(ANDROID)

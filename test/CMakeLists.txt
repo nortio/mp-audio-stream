@@ -8,8 +8,8 @@ set(CMAKE_CXX_STANDARD 17)
 include(CTest)
 enable_testing()
 
-add_executable(parlo_stream_test main.cc ../src/mp_audio_stream.cc ../src/user_buffer.cpp ../src/utils.cc)
-add_executable(parlo_mic_test mic.cc ../src/utils.cc ../src/mp_audio_stream.cc ../src/user_buffer.cpp ../src/utils.cc)
+add_executable(parlo_stream_test main.cc ../src/mp_audio_stream.cc ../src/user_buffer.cpp ../src/utils.cc ../src/miniaudio.c)
+add_executable(parlo_mic_test mic.cc ../src/utils.cc ../src/mp_audio_stream.cc ../src/user_buffer.cpp ../src/utils.cc ../src/miniaudio.c)
 
 add_subdirectory("../3rdparty/rnnoise" "${CMAKE_CURRENT_BINARY_DIR}/rnnoise" EXCLUDE_FROM_ALL)
 target_link_libraries(parlo_mic_test PRIVATE rnnoise)

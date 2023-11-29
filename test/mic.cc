@@ -10,8 +10,8 @@
 #include <unordered_map>
 
 #include "../3rdparty/rnnoise/rnnoise-src/include/rnnoise.h"
-#include "../src/utils.hpp"
 #include "../src/mp_audio_stream.h"
+#include "../src/utils.hpp"
 
 const int sample_rate = 48000;
 const int channels = 1;
@@ -23,11 +23,10 @@ volatile bool running = true;
 void stopRunning(int signal) { running = false; }
 
 int main() {
-  ma_stream_init(max_buffer_size, wait_buffer_size, channels, sample_rate);
-  signal(SIGINT, stopRunning);
-  while (running) {
+    ma_stream_init(max_buffer_size, wait_buffer_size, channels, sample_rate);
+    signal(SIGINT, stopRunning);
+    while (running) {
+    }
 
-  }
-
-  ma_stream_uninit();
+    ma_stream_uninit();
 }
