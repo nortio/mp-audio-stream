@@ -17,11 +17,6 @@ Copyright (c) 2023 nortio
     #include <stdbool.h>
 #endif
 
-#ifdef SELFTEST
-#include "utils.hpp"
-extern UserBuffer micBuffer;
-#endif
-
 EXPORT
 int ma_stream_init(int max_buffer_size, int keep_buffer_size, int channels, int sample_rate);
 

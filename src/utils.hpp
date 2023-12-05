@@ -42,31 +42,6 @@
     std::fprintf(stderr, "\n");
 #endif
 
-struct UserBuffer {
-    int id = -1;
-    uint32_t buffer_size;
-
-    float *buffer = nullptr;
-    uint32_t buf_end = 0;
-    uint32_t buf_start = 0;
-
-    bool is_exhausted = false;
-    uint32_t minimum_size_to_recover;
-
-    // Buffer exhaustion count (when buffer does not contain at least a frame
-    // but it's copied anyway)
-    uint32_t exhaust_count = 0;
-
-    // Buffer full count
-    uint32_t full_count = 0;
-};
-
-void consume_from_buffer(float *output, UserBuffer *user_buffer,
-                         int frame_count);
-
-void consume_from_buffer_mic(float *output, UserBuffer *user_buffer,
-                             int frame_count);
-
 void print_info(const std::unordered_map<int, Buffer> &map,
                 unsigned long long data_callback_counter,
                 const char device_name[256]);
@@ -74,9 +49,7 @@ void print_info(const std::unordered_map<int, Buffer> &map,
 void print_mic_level(uint64_t counter, float *input, uint32_t frame_count,
                      bool speaking);
 
-int buffer_push(UserBuffer *userBuffer, float *src, int length);
-
-inline float calculate_mic_level(float *input, uint32_t frame_count) {
+inline float calculate_mic_level(const float *input, uint32_t frame_count) {
     float acc = 0;
     for (int i = 0; i < frame_count; i++) {
         acc += input[i] * input[i];

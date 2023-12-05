@@ -49,8 +49,6 @@ uint8_t encoded_packet[max_data_bytes_opus];
 Buffer input_buffer(-1, mic_number_of_samples_per_packet * 10, 0);
 std::unordered_map<int, Buffer> active_speakers;
 
-std::thread encoding_thread;
-
 #ifndef SELFTEST
 #include "dart-sdk-include/dart_api.h"
 #include "dart-sdk-include/dart_api_dl.h"
