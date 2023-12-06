@@ -9,7 +9,6 @@
 #include <thread>
 #include <unordered_map>
 
-#include "../3rdparty/rnnoise/rnnoise-src/include/rnnoise.h"
 #include "../src/mp_audio_stream.h"
 #include "../src/utils.hpp"
 

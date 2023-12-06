@@ -1,0 +1,4 @@
+[submodule "3rdparty/opus"]
+	path = 3rdparty/opus
+	url = https://gitlab.xiph.org/xiph/opus
+	branch = 82ac57d9f1aaf575800cf17373348e45b7ce6c0d
