@@ -22,7 +22,7 @@ Copyright (c) 2023 nortio
 #define MA_NO_ENCODING
 #define MINIAUDIO_IMPLEMENTATION
 //#define MA_NO_PULSEAUDIO
-#include "../3rdparty/opus/include/opus.h"
+#include "../submodules/opus/include/opus.h"
 #include "miniaudio.h"
 #include "mp_audio_stream.h"
 #include "user_buffer.h"

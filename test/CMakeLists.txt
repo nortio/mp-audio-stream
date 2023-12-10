@@ -11,7 +11,7 @@ enable_testing()
 add_executable(parlo_stream_test main.cc ../src/mp_audio_stream.cc ../src/user_buffer.cpp ../src/utils.cc ../src/miniaudio.c)
 add_executable(parlo_mic_test mic.cc ../src/utils.cc ../src/mp_audio_stream.cc ../src/user_buffer.cpp ../src/utils.cc ../src/miniaudio.c)
 
-#add_subdirectory("../3rdparty/rnnoise" "${CMAKE_CURRENT_BINARY_DIR}/rnnoise" EXCLUDE_FROM_ALL)
+#add_subdirectory("../submodules/rnnoise" "${CMAKE_CURRENT_BINARY_DIR}/rnnoise" EXCLUDE_FROM_ALL)
 #target_link_libraries(parlo_mic_test PRIVATE rnnoise)
 
 if(LINUX)
@@ -21,7 +21,7 @@ message("BUILD TYPE: ${CMAKE_BUILD_TYPE}")
 add_compile_options($<$<NOT:$<CONFIG:Debug>>:/O2> /Wall)
 endif()
 set(OPUS_BUILD_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
-add_subdirectory("../3rdparty/opus" "${CMAKE_CURRENT_BINARY_DIR}/opus" EXCLUDE_FROM_ALL)
+add_subdirectory("../submodules/opus" "${CMAKE_CURRENT_BINARY_DIR}/opus" EXCLUDE_FROM_ALL)
 target_link_libraries(parlo_stream_test PRIVATE opus)
 target_link_libraries(parlo_mic_test PRIVATE opus)
 

@@ -35,7 +35,7 @@ add_compile_options($<$<NOT:$<CONFIG:Debug>>:/O2> /Wall)
 endif()
 #set(OPUS_BUILD_SHARED_LIBRARY ON CACHE BOOL "" FORCE)
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/opus")
-add_subdirectory("../3rdparty/opus" "${CMAKE_CURRENT_BINARY_DIR}/opus" EXCLUDE_FROM_ALL)
+add_subdirectory("../submodules/opus" "${CMAKE_CURRENT_BINARY_DIR}/opus" EXCLUDE_FROM_ALL)
 target_link_libraries(mp_audio_stream PUBLIC opus)
 
 set_target_properties(mp_audio_stream PROPERTIES
